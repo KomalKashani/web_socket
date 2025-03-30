@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Count Page</title>
+  </head>
+  <body>
+    <h1>Group Name: {{groupname}}</h1>
+    <textarea id="chat-log" cols="100" rows="20">
+        {% for chat in chats %}
+            {{chat.content}}
+        {% endfor %}
+    </textarea><br>
+    <input id = "chat-message-input" type="text" size="100"><br>
+    <input id = "chat-message-submit" type="button" value="Send">
+
+    {{groupname|json_script:"group-name"}}
+    
+    <script>
+        const groupName = JSON.parse(document.getElementById('group-name').textContent)
+        var ws = new WebSocket('ws://' + window.location.host + '/ws/wsc/' + groupName + '/')
+        ws.onopen = function() {
+            console.log('Websocket Connection open')
+        }
+        
+        ws.close = function(){
+            console.log('Websocket Disconnected')
+        }
+
+        document.getElementById("chat-message-submit").onclick = 
+        function(event){
+            const MessageInputDom = document.getElementById("chat-message-input")
+            const message = MessageInputDom.value
+            ws.send(JSON.stringify({
+                'msg': message
+            }))
+            MessageInputDom.value = ''
+        }
+
+        ws.onmessage = function(event) {
+            console.log("Message from server:",event)
+            const data = JSON.parse(event.data)
+
+            console.log("Main Data:",data)
+            console.log("Type of main data:",typeof(data))
+            console.log("User:",data.user)
+            console.log("Data:",data.msg)
+
+            document.querySelector('#chat-log').value += (data.user+ ':'+data.msg+ '\n')
+        }
+    </script>
+  </body>
+</html>
